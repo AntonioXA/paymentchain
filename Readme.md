@@ -20,6 +20,7 @@ La comunicación entre los microservicios se realiza utilizando WebClient en el 
 
 -Próximos Pasos
 Implementar el módulo infraestructuradomain
+Migrar de H2 a una base de datos relacional
 Monitorización de los microservicios
 Implementar Spring Security
 Dockerización
