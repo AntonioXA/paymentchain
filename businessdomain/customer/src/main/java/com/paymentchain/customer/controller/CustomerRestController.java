@@ -23,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import java.util.Collections;
+import org.springframework.core.env.Environment;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
@@ -44,11 +45,13 @@ public class CustomerRestController {
     @Autowired
     CustomerRepository customerRepository;
 
-    private final WebClient.Builder webClientBuilder;
+    @Autowired
+    private WebClient.Builder webClientBuilder;
+    /*private final WebClient.Builder webClientBuilder;
 
     public CustomerRestController(WebClient.Builder webClientBuilder) {
         this.webClientBuilder = webClientBuilder;
-    }
+    }*/
 
     //webClient requires HttpClient library to work propertly       
     HttpClient client = HttpClient.create()
@@ -66,6 +69,14 @@ public class CustomerRestController {
                 connection.addHandlerLast(new WriteTimeoutHandler(5000, TimeUnit.MILLISECONDS));
             });
 
+    @Autowired
+    private Environment env;
+    
+    @GetMapping("/check")
+    public String check() {
+        return "Property value is: " + env.getProperty("custom.activeprofileName");
+    }
+    
     @GetMapping()
     public List<Customer> list() {
         return customerRepository.findAll();
@@ -99,9 +110,9 @@ public class CustomerRestController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> delete(@PathVariable(name = "id") long id) {
-        Optional<Customer> findById = customerRepository.findById(id);
-        if (findById.get() != null) {
-            customerRepository.delete(findById.get());
+        Optional<Customer> customer = customerRepository.findById(id);
+        if (customer.get() != null) {
+            customerRepository.delete(customer.get());
         }
         return ResponseEntity.ok().build();
     }
@@ -126,9 +137,9 @@ public class CustomerRestController {
 
     private String getProductName(long id) {
         WebClient build = webClientBuilder.clientConnector(new ReactorClientHttpConnector(client))
-                .baseUrl("http://localhost:8083/product")
+                .baseUrl("http://BUSINESSDOMAIN-PRODUCT/product")
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                .defaultUriVariables(Collections.singletonMap("url", "http://localhost:8083/product"))
+                .defaultUriVariables(Collections.singletonMap("url", "http://BUSINESSDOMAIN-PRODUCT/product"))
                 .build();
         JsonNode block = build.method(HttpMethod.GET).uri("/" + id)
                 .retrieve().bodyToMono(JsonNode.class).block();
@@ -138,9 +149,9 @@ public class CustomerRestController {
 
     private List<?> getTransactions(String iban) {
         WebClient build = webClientBuilder.clientConnector(new ReactorClientHttpConnector(client))
-                .baseUrl("http://localhost:8082/transaction")
+                .baseUrl("http://BUSINESSDOMAIN-TRANSACTIONS/transaction")
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-                .defaultUriVariables(Collections.singletonMap("url", "http://localhost:8082/transaction"))
+                .defaultUriVariables(Collections.singletonMap("url", "http://BUSINESSDOMAIN-TRANSACTIONS/transaction"))
                 .build();
         Optional<List<?>> transactionsOptional = Optional.ofNullable(build.method(HttpMethod.GET)
                 .uri(uriBuilder -> uriBuilder

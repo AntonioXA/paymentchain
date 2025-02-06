@@ -23,13 +23,13 @@ public class CustomerProduct {
        @Id
     @GeneratedValue(strategy=GenerationType.AUTO)
     private long id;
-    private long productId;
+    private long productId;//id del producto
     @Transient
-    private String productName;
+    private String productName;//este atributo no se guardara por @Transient
     
     @JsonIgnore//it is necesary for avoid infinite recursion
     @ManyToOne(fetch = FetchType.LAZY,targetEntity = Customer.class)
     @JoinColumn(name = "customerId", nullable = true)   
-    private Customer customer;      
+    private Customer customer;//id del cliente
     
 }
