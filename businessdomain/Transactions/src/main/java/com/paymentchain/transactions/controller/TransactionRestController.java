@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -33,18 +34,33 @@ public class TransactionRestController {
     TransactionRepository transactionRepository;
 
     @GetMapping()
-    public List<Transaction> list() {
-        return transactionRepository.findAll();
+    public ResponseEntity<?> list() {
+        List<Transaction> findAll = transactionRepository.findAll();
+        if (findAll.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+        } else {
+            return ResponseEntity.ok(findAll);
+        }
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Transaction> get(@PathVariable(name = "id") long id) {
-        return transactionRepository.findById(id).map(x -> ResponseEntity.ok(x)).orElse(ResponseEntity.notFound().build());
+    public ResponseEntity<?> get(@PathVariable(name = "id") long id) {
+        Optional<Transaction> findById = transactionRepository.findById(id);
+        if (findById.isPresent()) {
+            return ResponseEntity.ok(findById);
+        }
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
     }
 
     @GetMapping("/customer/transactions")
-    public List<Transaction> get(@RequestParam(name = "ibanAccount") String ibanAccount) {
-        return transactionRepository.findByIbanAccount(ibanAccount);
+    public ResponseEntity<?> get(@RequestParam(name = "ibanAccount") String ibanAccount) {
+        Optional<Transaction> findByIbanAccount = transactionRepository.findByIbanAccount(ibanAccount);
+        if (findByIbanAccount.isPresent()) {
+            return ResponseEntity.ok(findByIbanAccount);
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+        
     }
 
     @PutMapping("/{id}")
@@ -67,16 +83,19 @@ public class TransactionRestController {
     @PostMapping
     public ResponseEntity<?> post(@RequestBody Transaction input) {
         Transaction save = transactionRepository.save(input);
-        return ResponseEntity.ok(save);
+        return ResponseEntity.status(HttpStatus.CREATED).body(save);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> delete(@PathVariable(name = "id") long id) {
         Optional<Transaction> findById = transactionRepository.findById(id);
-        if (findById.get() != null) {
+        if (findById.isPresent()) {
             transactionRepository.delete(findById.get());
+            return ResponseEntity.ok().build();
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
-        return ResponseEntity.ok().build();
+        
     }
 
 }

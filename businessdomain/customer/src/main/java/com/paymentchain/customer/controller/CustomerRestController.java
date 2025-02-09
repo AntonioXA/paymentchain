@@ -25,6 +25,7 @@ import org.springframework.http.MediaType;
 import java.util.Collections;
 import org.springframework.core.env.Environment;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -71,20 +72,30 @@ public class CustomerRestController {
 
     @Autowired
     private Environment env;
-    
+
     @GetMapping("/check")
     public String check() {
         return "Property value is: " + env.getProperty("custom.activeprofileName");
     }
-    
+
     @GetMapping()
-    public List<Customer> list() {
-        return customerRepository.findAll();
+    public ResponseEntity<?> list() {
+        List<Customer> findAll = customerRepository.findAll();
+        if (findAll.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+        } else {
+            return ResponseEntity.ok(findAll);
+        }
     }
 
     @GetMapping("/{id}")
-    public Customer get(@PathVariable(name = "id") long id) {
-        return customerRepository.findById(id).get();
+    public ResponseEntity<?> get(@PathVariable(name = "id") long id) {
+        Optional<Customer> findById = customerRepository.findById(id);
+        if (findById.isPresent()) {
+            return ResponseEntity.ok(findById);
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
     }
 
     @PutMapping("/{id}")
@@ -105,34 +116,41 @@ public class CustomerRestController {
     public ResponseEntity<?> post(@RequestBody Customer input) {
         input.getProducts().forEach(x -> x.setCustomer(input));
         Customer save = customerRepository.save(input);
-        return ResponseEntity.ok(save);
+        return ResponseEntity.status(HttpStatus.CREATED).body(save);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> delete(@PathVariable(name = "id") long id) {
         Optional<Customer> customer = customerRepository.findById(id);
-        if (customer.get() != null) {
+        if (customer.isPresent()) {
             customerRepository.delete(customer.get());
+            return ResponseEntity.ok().build();
+        } else {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
-        return ResponseEntity.ok().build();
+        
+
     }
 
     @GetMapping("/full")
-    public Customer getByCode(@RequestParam(name = "code") String code) {
+    public ResponseEntity<?> getByCode(@RequestParam(name = "code") String code) {
         Customer customer = customerRepository.findByCode(code);
-        if (customer != null) {
-            //Encuentra los podructos de cada cliente
-            List<CustomerProduct> products = customer.getProducts();
-            //Encuentra el nombre de cada producto
-            products.forEach(x -> {
-                String productName = getProductName(x.getId());
-                x.setProductName(productName);
-            });
-            //Encuentra las transacciones de cada cliente
-            List<?> transactions = getTransactions(customer.getIban());
-            customer.setTransactions(transactions);
+        if (customer == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
-        return customer;
+
+        //Encuentra los podructos de cada cliente
+        List<CustomerProduct> products = customer.getProducts();
+        //Encuentra el nombre de cada producto
+        products.forEach(x -> {
+            String productName = getProductName(x.getId());
+            x.setProductName(productName);
+        });
+        //Encuentra las transacciones de cada cliente
+        List<?> transactions = getTransactions(customer.getIban());
+        customer.setTransactions(transactions);
+
+        return ResponseEntity.ok(customer);
     }
 
     private String getProductName(long id) {
@@ -143,8 +161,7 @@ public class CustomerRestController {
                 .build();
         JsonNode block = build.method(HttpMethod.GET).uri("/" + id)
                 .retrieve().bodyToMono(JsonNode.class).block();
-        String name = block.get("name").asText();
-        return name;
+        return block.get("name").asText();
     }
 
     private List<?> getTransactions(String iban) {
