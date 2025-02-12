@@ -1,4 +1,8 @@
-com\paymentchain\product\entities\Product.class
-com\paymentchain\product\controller\ProductRestController.class
+com\paymentchain\product\common\StandarizedApiExceptionResponse.class
+com\paymentchain\product\business\transactions\BusinessTransactions.class
 com\paymentchain\product\ProductApplication.class
 com\paymentchain\product\respository\ProductRepository.class
+com\paymentchain\product\entities\Product.class
+com\paymentchain\product\exception\BusinessRuleException.class
+com\paymentchain\product\controller\ProductRestController.class
+com\paymentchain\product\exception\ApiExceptionHandler.class

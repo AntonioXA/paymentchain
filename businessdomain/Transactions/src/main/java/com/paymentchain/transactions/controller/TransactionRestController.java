@@ -5,8 +5,11 @@
  */
 package com.paymentchain.transactions.controller;
 
+import com.paymentchain.transactions.business.transactions.BusinessTransactions;
 import com.paymentchain.transactions.entities.Transaction;
+import com.paymentchain.transactions.exception.BusinessRuleException;
 import com.paymentchain.transactions.respository.TransactionRepository;
+import java.net.UnknownHostException;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestMapping;
 import java.util.List;
@@ -32,6 +35,9 @@ public class TransactionRestController {
 
     @Autowired
     TransactionRepository transactionRepository;
+    
+    @Autowired
+    BusinessTransactions businessTransactions;
 
     @GetMapping()
     public ResponseEntity<?> list() {
@@ -54,8 +60,8 @@ public class TransactionRestController {
 
     @GetMapping("/customer/transactions")
     public ResponseEntity<?> get(@RequestParam(name = "ibanAccount") String ibanAccount) {
-        Optional<Transaction> findByIbanAccount = transactionRepository.findByIbanAccount(ibanAccount);
-        if (findByIbanAccount.isPresent()) {
+        List<Transaction> findByIbanAccount = transactionRepository.findByIbanAccount(ibanAccount);
+        if (findByIbanAccount != null) {
             return ResponseEntity.ok(findByIbanAccount);
         } else {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
@@ -81,8 +87,8 @@ public class TransactionRestController {
     }
 
     @PostMapping
-    public ResponseEntity<?> post(@RequestBody Transaction input) {
-        Transaction save = transactionRepository.save(input);
+    public ResponseEntity<?> post(@RequestBody Transaction input) throws BusinessRuleException, UnknownHostException {
+        Transaction save = businessTransactions.post(input);
         return ResponseEntity.status(HttpStatus.CREATED).body(save);
     }
 

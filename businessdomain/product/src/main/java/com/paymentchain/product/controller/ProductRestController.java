@@ -5,7 +5,9 @@
  */
 package com.paymentchain.product.controller;
 
+import com.paymentchain.product.business.transactions.BusinessTransactions;
 import com.paymentchain.product.entities.Product;
+import com.paymentchain.product.exception.BusinessRuleException;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestMapping;
 import java.util.List;
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import com.paymentchain.product.respository.ProductRepository;
+import java.net.UnknownHostException;
 import java.util.Optional;
 import org.springframework.http.HttpStatus;
 
@@ -27,6 +30,9 @@ public class ProductRestController {
 
     @Autowired
     ProductRepository productRepository;
+    
+    @Autowired
+    BusinessTransactions businessTransactions;
 
     @GetMapping()
     public ResponseEntity<?> list() {
@@ -61,9 +67,9 @@ public class ProductRestController {
     }
 
     @PostMapping
-    public ResponseEntity<?> post(@RequestBody Product input) {
-        Product save = productRepository.save(input);
-        return ResponseEntity.status(HttpStatus.CREATED).body(save);
+    public ResponseEntity<?> post(@RequestBody Product input) throws BusinessRuleException, UnknownHostException {
+        Product post = businessTransactions.post(input);
+        return ResponseEntity.status(HttpStatus.CREATED).body(post);
     }
 
     @DeleteMapping("/{id}")
