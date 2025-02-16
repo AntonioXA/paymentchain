@@ -9,6 +9,10 @@ import com.paymentchain.transactions.business.transactions.BusinessTransactions;
 import com.paymentchain.transactions.entities.Transaction;
 import com.paymentchain.transactions.exception.BusinessRuleException;
 import com.paymentchain.transactions.respository.TransactionRepository;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import java.net.UnknownHostException;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -29,16 +33,22 @@ import org.springframework.web.bind.annotation.RequestParam;
  *
  * @author anton
  */
+@Tag(name = "Transaction API", description = "Esta API despliega todas las funcionalidades para manejar transacciones")
 @RestController
 @RequestMapping("/transaction")
 public class TransactionRestController {
 
     @Autowired
     TransactionRepository transactionRepository;
-    
+
     @Autowired
     BusinessTransactions businessTransactions;
 
+    @Operation(description = "Obtiene todas las transacciones")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Éxito"),
+        @ApiResponse(responseCode = "204", description = "Lista de transacciones vacía")
+    })
     @GetMapping()
     public ResponseEntity<?> list() {
         List<Transaction> findAll = transactionRepository.findAll();
@@ -49,6 +59,11 @@ public class TransactionRestController {
         }
     }
 
+    @Operation(description = "Obtiene una transacción por su ID")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Éxito"),
+        @ApiResponse(responseCode = "404", description = "Transacción no encontrada")
+    })
     @GetMapping("/{id}")
     public ResponseEntity<?> get(@PathVariable(name = "id") long id) {
         Optional<Transaction> findById = transactionRepository.findById(id);
@@ -58,6 +73,11 @@ public class TransactionRestController {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
     }
 
+    @Operation(description = "Obtiene todas las transacciones de un cliente por IBAN")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Éxito"),
+        @ApiResponse(responseCode = "404", description = "No se encontraron transacciones para el IBAN especificado")
+    })
     @GetMapping("/customer/transactions")
     public ResponseEntity<?> get(@RequestParam(name = "ibanAccount") String ibanAccount) {
         List<Transaction> findByIbanAccount = transactionRepository.findByIbanAccount(ibanAccount);
@@ -66,9 +86,14 @@ public class TransactionRestController {
         } else {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
-        
+
     }
 
+    @Operation(description = "Actualiza una transacción por su ID")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Transacción actualizada exitosamente"),
+        @ApiResponse(responseCode = "412", description = "Transacción no encontrada")
+    })
     @PutMapping("/{id}")
     public ResponseEntity<?> put(@PathVariable(name = "id") long id, @RequestBody Transaction input) {
         Transaction find = transactionRepository.findById(id).get();
@@ -86,12 +111,22 @@ public class TransactionRestController {
         return ResponseEntity.ok(save);
     }
 
+    @Operation(description = "Crea una nueva transacción")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "201", description = "Transacción creada exitosamente"),
+        @ApiResponse(responseCode = "412", description = "Faltan datos")
+    })
     @PostMapping
     public ResponseEntity<?> post(@RequestBody Transaction input) throws BusinessRuleException, UnknownHostException {
         Transaction save = businessTransactions.post(input);
         return ResponseEntity.status(HttpStatus.CREATED).body(save);
     }
 
+    @Operation(description = "Elimina una transacción por su ID")
+    @ApiResponses(value = {
+        @ApiResponse(responseCode = "200", description = "Transacción eliminada exitosamente"),
+        @ApiResponse(responseCode = "404", description = "Transacción no encontrada")
+    })
     @DeleteMapping("/{id}")
     public ResponseEntity<?> delete(@PathVariable(name = "id") long id) {
         Optional<Transaction> findById = transactionRepository.findById(id);
@@ -101,7 +136,7 @@ public class TransactionRestController {
         } else {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
-        
+
     }
 
 }
